@@ -1,0 +1,7 @@
+// Available types: int, string, boolean, enum
+// request:true, can be passed in url as dyn:feature1=(true)
+{
+  log: {type: ["debug", "info", "warn", "error"], default:"warn", dev:"info"},
+  feature1:{type:"boolean", default:false, dev:true, request:true},
+  name1:{type:"string", default:"foo"}
+}
