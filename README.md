@@ -1,4 +1,4 @@
 WP_Scala_Framework
 ==================
 
-An framework for building Scala services.
+A framework for building Scala services.
