@@ -10,6 +10,7 @@ import com.whitepages.framework.logging.noId
 import com.whitepages.framework.util.ClassSupport
 import scala.language.postfixOps
 
+/*
 class TestSOLR extends FunSpec with Matchers with ClassSupport with SOLRTestData with BeforeAndAfterAll {
   private[this] val main = new TestMain()
   private[this] var info: ClientCallback.Info = null
@@ -42,3 +43,4 @@ class TestSOLR extends FunSpec with Matchers with ClassSupport with SOLRTestData
     }
   }
 }
+*/

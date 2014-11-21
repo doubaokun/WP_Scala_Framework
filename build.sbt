@@ -2,19 +2,24 @@ name := "scala-webservice"
 
 organization := "com.whitepages"
 
-repo := "search-dev"
-
 scalaVersion := "2.11.1"
 
 crossScalaVersions := Seq("2.11.1")   // sbt-release bug!
 
-wpSettings
+fork := true
 
 scalacOptions in (Compile, doc) ++= Seq("-skip-packages", "com.persist")
 
+buildInfoSettings
+
+sourceGenerators in Compile <+= buildInfo
+
+buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, javaSource, organization)
+
+buildInfoPackage := "com.whitepages.info." + (name.value.replace("-", "_"))
+
 libraryDependencies ++= Seq(
         "org.scala-lang" % "scala-reflect" % "2.11.1",
-        "com.whitepages" % "wp-logback-util" % "0.1.1",
         "commons-daemon" % "commons-daemon" % "1.0.15",
         "org.codehaus.janino" % "janino" % "2.6.1",
         "com.codahale.metrics" % "metrics-core" % "3.0.1",
@@ -29,10 +34,11 @@ libraryDependencies ++= Seq(
         "io.spray" %% "spray-can" % "1.3.1-20140423",
         "joda-time" % "joda-time" % "2.2",
         "org.joda" % "joda-convert" % "1.2",
-        "com.whitepages" %% "scala-webservice-thrift" % "0.0.24" % "test",
         "org.scalatest" %% "scalatest" % "2.1.7" % "test",
         "postgresql" % "postgresql" % "9.1-901.jdbc4",
         "org.jfree" % "jfreechart" % "1.0.14" % "test",
         "com.etaty.rediscala" %% "rediscala" % "1.3.2",
-        "com.twitter" %% "scrooge-core" % "3.16.42"
-)
+        "com.twitter" % "scrooge-core_2.11" % "3.16.42" exclude("org.apache.thrift","libthrift"),
+        "org.apache.thrift" % "libthrift" % "0.9.0",
+        "ch.qos.logback" % "logback-classic" % "1.0.13",
+        "com.persist" % "persist-json_2.11" % "0.21")
