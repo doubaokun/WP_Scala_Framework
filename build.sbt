@@ -18,6 +18,12 @@ buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, java
 
 buildInfoPackage := "com.whitepages.info." + (name.value.replace("-", "_"))
 
+resolvers += "spray repo" at "http://repo.spray.io"
+
+resolvers += "riemann repo" at "http://clojars.org/repo"
+
+resolvers += "rediscala" at "http://dl.bintray.com/etaty/maven"
+
 libraryDependencies ++= Seq(
         "org.scala-lang" % "scala-reflect" % "2.11.1",
         "commons-daemon" % "commons-daemon" % "1.0.15",
@@ -37,7 +43,8 @@ libraryDependencies ++= Seq(
         "org.scalatest" %% "scalatest" % "2.1.7" % "test",
         "postgresql" % "postgresql" % "9.1-901.jdbc4",
         "org.jfree" % "jfreechart" % "1.0.14" % "test",
-        "com.etaty.rediscala" %% "rediscala" % "1.3.2",
+        // "com.etaty.rediscala" %% "rediscala" % "1.3.2",
+        "com.etaty.rediscala" %% "rediscala" % "1.4.0",
         "com.twitter" % "scrooge-core_2.11" % "3.16.42" exclude("org.apache.thrift","libthrift"),
         "org.apache.thrift" % "libthrift" % "0.9.0",
         "ch.qos.logback" % "logback-classic" % "1.0.13",
