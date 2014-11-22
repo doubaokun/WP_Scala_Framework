@@ -45,7 +45,7 @@ libraryDependencies ++= Seq(
         "org.jfree" % "jfreechart" % "1.0.14" % "test",
         // "com.etaty.rediscala" %% "rediscala" % "1.3.2",
         "com.etaty.rediscala" %% "rediscala" % "1.4.0",
-        "com.twitter" % "scrooge-core_2.11" % "3.16.42" exclude("org.apache.thrift","libthrift"),
+        //"com.twitter" % "scrooge-core_2.11" % "3.16.42" exclude("org.apache.thrift","libthrift"),
         "org.apache.thrift" % "libthrift" % "0.9.0",
         "ch.qos.logback" % "logback-classic" % "1.0.13",
         "com.persist" % "persist-json_2.11" % "0.21")
