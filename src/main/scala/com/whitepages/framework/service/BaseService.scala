@@ -1,6 +1,6 @@
 package com.whitepages.framework.service
 
-import com.twitter.scrooge.Info
+//import com.twitter.scrooge.Info
 import org.apache.commons.daemon.{DaemonContext, Daemon}
 import akka.actor.{ActorRefFactory, Props, ActorSystem}
 import com.typesafe.config.Config
@@ -39,7 +39,7 @@ private[framework] abstract class BaseService extends Daemon {
   private[this] var config: Config = null
   private[this] var started = false
 
-  private[service] def getInfo: Map[String, Info]
+  //private[service] def getInfo: Map[String, Info]
 
   /**
    * The name of the service will be supplied by the service class.
@@ -201,7 +201,8 @@ private[framework] abstract class BaseService extends Daemon {
     val maxWarmup = getFiniteDuration("wp.service.maxWarmup", config)
     val waitEnableLB = getFiniteDuration("wp.service.waitEnableLB", config)
     if (runServer) {
-      server = Server(sd = this, infos = getInfo, handler = handler,
+      //server = Server(sd = this, infos = getInfo, handler = handler,
+      server = Server(sd = this, handler = handler,
         queryStringHandlerIn = queryStringHandler,
         listen = listen, port = port, isDev, useOld, buildInfo)
       ok = server.start()

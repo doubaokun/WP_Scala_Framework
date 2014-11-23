@@ -1,5 +1,6 @@
 package com.whitepages.svc
 
+/*
 import scala.concurrent.{Promise, Future}
 import akka.actor._
 import scala.concurrent.duration._
@@ -126,3 +127,4 @@ object TestHandlerFactoryThrift extends ThriftService.HandlerFactory {
   def start(actorFactory: ActorRefFactory) = new TestHandlerThrift(actorFactory)
 
 }
+*/

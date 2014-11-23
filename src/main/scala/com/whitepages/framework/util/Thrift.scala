@@ -1,5 +1,7 @@
 package com.whitepages.framework.util
 
+/*
+
 import com.twitter.scrooge.serialization.ThriftCodec
 import org.apache.thrift.protocol.{TProtocol, TMessage, TCompactProtocol, TBinaryProtocol}
 import org.apache.thrift.transport.{TTransport, TMemoryBuffer, TMemoryInputTransport}
@@ -183,4 +185,5 @@ object Thrift {
     }
   }
 }
+*/
 

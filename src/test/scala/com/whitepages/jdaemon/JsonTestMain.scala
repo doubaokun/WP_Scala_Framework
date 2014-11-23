@@ -1,6 +1,6 @@
 package com.whitepages.jdaemon
 
-import com.whitepages.svc.{TestMonitor, TestHandlerFactoryThrift}
+import com.whitepages.svc.TestMonitor
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
 import com.whitepages.framework.service.JsonService

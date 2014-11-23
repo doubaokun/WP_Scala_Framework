@@ -1,5 +1,6 @@
 package com.whitepages
 
+/*
 import com.whitepages.svc.{TestMonitor, TestHandlerFactoryThrift}
 import com.codahale.metrics.MetricRegistry
 import com.typesafe.config.ConfigFactory
@@ -23,3 +24,4 @@ object TestMain {
     new TestMain().runServer(testConfig)
   }
 }
+*/

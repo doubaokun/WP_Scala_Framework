@@ -1,7 +1,7 @@
 package com.whitepages.framework.service
 
 import akka.actor.{ActorRef, ActorRefFactory}
-import com.whitepages.framework.util.Thrift
+//import com.whitepages.framework.util.Thrift
 
 // Note for the JServiceDaemon, info will be null.
 

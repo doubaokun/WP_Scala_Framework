@@ -1,26 +1,27 @@
 package com.whitepages.framework.client
 
 import com.persist.JsonOps._
-import com.persist.JsonMapper._
+//import com.persist.JsonMapper._
 import com.persist.json.WriteCodec
-import com.twitter.scrooge.serialization.ThriftCodec
+//import com.twitter.scrooge.serialization.ThriftCodec
 import scala.concurrent.{ExecutionContext, Future}
 import spray.http.HttpMethods._
 import spray.http.MediaTypes._
 import akka.actor.{Props, ActorRefFactory}
-import com.twitter.scrooge.{TInfo, ThriftStruct}
-import com.whitepages.framework.util.{ClassSupport, Thrift}
-import Thrift._
+//import com.twitter.scrooge.{TInfo, ThriftStruct}
+//import com.whitepages.framework.util.{ClassSupport, Thrift}
+import com.whitepages.framework.util.ClassSupport
+//import Thrift._
 import java.net.URLEncoder
 import ExecutionContext.Implicits.global
 import com.whitepages.framework.logging._
-import com.whitepages.framework.service.ThriftService
+//import com.whitepages.framework.service.ThriftService
 import spray.http.HttpHeaders.RawHeader
 import scala.util.Failure
 import scala.Some
 import scala.util.Success
 import com.whitepages.framework.logging.RequestId
-import com.whitepages.framework.util.Thrift
+//import com.whitepages.framework.util.Thrift
 import com.whitepages.framework.util
 import spray.http._
 import org.apache.thrift.protocol.TMessage
@@ -56,6 +57,7 @@ object Client {
    */
   var mocks = Map[String, ClientMock]()
 
+  /*
   private[client] def thriftToHttpRequest[T <: ThriftStruct](cmd: String, args: T, headers: List[HttpHeader], uri: String, reqId: AnyId,
                           thriftProtocol: ThriftProtocol = ThriftBinaryProtocol)(implicit codec: ThriftCodec[T]): HttpRequest = {
     val msg = new TMessage(cmd, 0, 0)
@@ -63,9 +65,11 @@ object Client {
     val entity = HttpEntity(thriftType, bytes)
     HttpRequest(method = POST, uri = uri, headers = headers, entity = entity)
   }
+  */
   private[client] def checkStatusCode2XX(status: StatusCode) {
     if (status.intValue < 200 || status.intValue >= 300) throw new Exception("non-2XX response status code from service")
   }
+
 }
 
 /**
@@ -77,8 +81,8 @@ object Client {
  */
 case class Client(private val actorFactory: ActorRefFactory,
                   private val clientName: String,
-                  private val mapper: ExtendedClientLogging.Mapper = ExtendedClientLogging.defaultMapper,
-                  private val thriftProtocol: ThriftProtocol = ThriftBinaryProtocol)
+                  private val mapper: ExtendedClientLogging.Mapper = ExtendedClientLogging.defaultMapper)
+//                  private val thriftProtocol: ThriftProtocol = ThriftBinaryProtocol)
   extends ClassSupport {
 
   private[this] val extendedClientLogging = ExtendedClientLogging(mapper, clientName)
@@ -110,6 +114,7 @@ case class Client(private val actorFactory: ActorRefFactory,
     } else {
       null
     }
+  /*
   private[this] val thriftName = clientConfig.getString("thriftName")
   private[this] val thriftPath = clientConfig.getString("thriftPath")
   private[this] val infoOption = if (thriftName == "" || thriftPath == "") {
@@ -125,6 +130,7 @@ case class Client(private val actorFactory: ActorRefFactory,
   } else {
     Some(Thrift.info(thriftPath, thriftName))
   }
+  */
 
   private[this] val jsonMapper = JsonLoggingMapper(clientName)
 
@@ -299,6 +305,7 @@ case class Client(private val actorFactory: ActorRefFactory,
     }
   }
 
+  /*
   /**
    * Sends a thrift POST request to the service that this client is connected to.
    * @param cmd the name of the command to the service.
@@ -378,6 +385,7 @@ case class Client(private val actorFactory: ActorRefFactory,
       responseFuture
     }
   }
+  */
 
   /**
    * This method should be called after all use of the client to stop it.

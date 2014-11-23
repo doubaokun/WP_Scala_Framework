@@ -1,6 +1,6 @@
 package com.whitepages.framework.server
 
-import com.twitter.scrooge.{ThriftStruct, Info}
+//import com.twitter.scrooge.{ThriftStruct, Info}
 import com.whitepages.framework.service.{BaseHandler, BaseService}
 import akka.actor.{Props, ActorRef, ActorSystem}
 import com.persist.JsonOps._
@@ -19,7 +19,7 @@ import com.whitepages.framework.logging.noId
 import scala.language.postfixOps
 
 private[framework] case class Server(sd: BaseService,
-                                     infos: Map[String, Info],
+                                     //infos: Map[String, Info],
                                      handler: BaseHandler,
                                      queryStringHandlerIn: Option[(JsonObject, String) => JsonObject],
                                      listen: String, port: Int, isDev: Boolean, useOld: Boolean,
@@ -40,7 +40,7 @@ private[framework] case class Server(sd: BaseService,
     val logRequest = config.getBoolean("wp.service.logRequest")
     val logResponse = config.getBoolean("wp.service.logResponse")
 
-    serverActor = system.actorOf(Props(classOf[ServerActor], sd, bindCompletedPromise, unbindCompletedPromise, infos,
+    serverActor = system.actorOf(Props(classOf[ServerActor], sd, bindCompletedPromise, unbindCompletedPromise, //infos,
       handler, queryStringHandler, isDev, logRequest, logResponse, buildInfo), name = "server")
 
     serverActor ! ServerActor.Bind(listen, port)

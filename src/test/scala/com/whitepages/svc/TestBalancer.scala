@@ -1,4 +1,5 @@
 package com.whitepages.svc
+/*
 
 import com.whitepages.TestMain
 import com.persist.JsonOps._
@@ -14,7 +15,6 @@ import com.whitepages.framework.service.ClientCallback
 import com.whitepages.framework.logging.noId
 import com.whitepages.framework.util.ClassSupport
 
-/*
 class TestBalancer extends FunSpec {
 
   object Callback extends ClientCallback {

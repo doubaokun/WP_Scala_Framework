@@ -1,5 +1,6 @@
 package com.whitepages.svc
 
+/*
 import com.whitepages.TestMain
 import com.persist.JsonOps._
 import scala.concurrent.{Future, Await}
@@ -224,5 +225,6 @@ class TestClientServer extends FunSpec with BeforeAndAfterAll with Matchers with
   }
 
 }
+*/
 
 

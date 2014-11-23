@@ -1,6 +1,5 @@
 package com.whitepages.jdaemon
 
-import com.whitepages.TestMain
 import com.persist.JsonOps._
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -17,7 +16,7 @@ class JTestClientServer extends FunSpec with Matchers with ClassSupport with Bef
   private[this] var client: Client = null
 
   override def beforeAll {
-    info = main.testBeforeSystem(TestMain.testConfig)
+    info = main.testBeforeSystem(JsonTestMain.testConfig)
     client = Client(info.refFactory, "self")
   }
 
@@ -39,5 +38,6 @@ class JTestClientServer extends FunSpec with Matchers with ClassSupport with Bef
     }
   }
 }
+
 
 

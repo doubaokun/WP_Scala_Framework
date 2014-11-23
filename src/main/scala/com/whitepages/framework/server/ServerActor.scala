@@ -8,8 +8,9 @@ import spray.http._
 import HttpMethods._
 import MediaTypes._
 import com.persist.JsonOps._
-import com.whitepages.framework.util.{CheckedActor, Thrift}
-import Thrift._
+//import com.whitepages.framework.util.{CheckedActor, Thrift}
+import com.whitepages.framework.util.CheckedActor
+//import Thrift._
 import akka.io.IO
 import com.persist.Exceptions.SystemException
 import java.util.UUID
@@ -21,7 +22,7 @@ import com.whitepages.framework.service._
 import spray.http.HttpResponse
 import spray.http.HttpRequest
 import akka.actor.DeadLetter
-import com.twitter.scrooge.{ThriftStruct, Info}
+//import com.twitter.scrooge.{ThriftStruct, Info}
 import com.whitepages.framework.exceptions._
 import com.whitepages.framework.logging.{DurationStrings, noId, RequestId, LoggingControl}
 import scala.language.postfixOps
@@ -86,7 +87,7 @@ private[server] object ServerActor {
 private[server] class ServerActor(private[this] val sd: BaseService,
                                   private[this] val bindCompletedPromise: Promise[Boolean],
                                   private[this] val unbindCompletedPromise: Promise[Boolean],
-                                  private[this] val infos: Map[String, Info],
+                                  //private[this] val infos: Map[String, Info],
                                   private[this] val handler: BaseHandler,
                                   private[this] val queryStringHandler: (JsonObject, String) => JsonObject,
                                   private[this] val isDev: Boolean,
@@ -103,11 +104,11 @@ private[server] class ServerActor(private[this] val sd: BaseService,
   private[this] var isBound = false
   private[this] var httpListener: ActorRef = null
   private[this] val jsonHandler = handler match {
-    case h: ThriftService.Handler => JsonHandler1(context, h, infos)
+    //case h: ThriftService.Handler => JsonHandler1(context, h, infos)
     case j: JsonService.Handler => JJsonHandler(context, j)
   }
   private[this] val thriftHandler = handler match {
-    case h: ThriftService.Handler => ThriftHandler1(context, h, infos)
+    //case h: ThriftService.Handler => ThriftHandler1(context, h, infos)
     case j: JsonService.Handler => null
   }
   private[this] val dynamic = Dynamic(isDev)
@@ -189,6 +190,7 @@ private[server] class ServerActor(private[this] val sd: BaseService,
                     sender1 ! HttpResponse(entity = HttpEntity(`application/json`, responses))
                     (cmd1, requestj, responsej, extraj)
                 }
+              /*
               case thriftType.value if infos != null =>
                 val f = thriftHandler.doThrift(id, entity.data.toByteArray, dynamic.get(dyns))
                 f.map {
@@ -196,6 +198,7 @@ private[server] class ServerActor(private[this] val sd: BaseService,
                     sender1 ! HttpResponse(entity = HttpEntity(thriftType, responseBytes))
                     (cmd1, requestj, responsej, extraj)
                 }
+              */
               case _ =>
                 Future {
                   monitor ! ServerError

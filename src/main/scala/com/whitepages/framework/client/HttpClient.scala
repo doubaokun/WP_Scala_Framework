@@ -170,6 +170,7 @@ object HttpClient extends ClassSupport {
 
   }
 
+  /*
   private[client] object ThriftBodyFactory extends BodyFactory {
     private[client] val mediaType = com.whitepages.framework.util.Thrift.thriftType
 
@@ -201,6 +202,7 @@ object HttpClient extends ClassSupport {
 
     private[client] def toJson = new sun.misc.BASE64Encoder().encode(body)
   }
+  */
 
   private[client] object Bodies {
     private def item(fact: BodyFactory) = fact.mediaType.toString() -> fact
@@ -211,8 +213,8 @@ object HttpClient extends ClassSupport {
       item(XmlBodyFactory),
       item(SoapBodyFactory),
       item(TextBodyFactory),
-      item(JavascriptBodyFactory),
-      item(ThriftBodyFactory)
+      item(JavascriptBodyFactory)
+      //item(ThriftBodyFactory)
     )
 
     def register(fact: BodyFactory) {

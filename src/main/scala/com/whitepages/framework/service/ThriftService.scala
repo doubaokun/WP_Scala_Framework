@@ -1,5 +1,6 @@
 package com.whitepages.framework.service
 
+/*
 import com.whitepages.framework.util.Thrift
 import com.twitter.scrooge.ThriftStruct
 import com.persist.JsonOps._
@@ -93,3 +94,4 @@ abstract class ThriftService extends BaseService {
    */
   def getInfo = info
 }
+*/

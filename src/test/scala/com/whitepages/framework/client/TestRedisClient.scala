@@ -1,5 +1,6 @@
 package com.whitepages.framework.client
 
+/*
 import scala.concurrent.{ExecutionContext, Await}
 import scala.concurrent.duration._
 import org.scalatest.matchers.ShouldMatchers
@@ -13,7 +14,6 @@ import com.whitepages.framework.client.RedisClient._
 import com.whitepages.framework.exceptions.NotAvailableException
 import java.net._
 
-/*
 class TestRedisClient extends FunSpec {
 
   object Callback extends ClientCallback {

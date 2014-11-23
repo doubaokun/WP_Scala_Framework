@@ -1,5 +1,6 @@
 package com.whitepages.framework.server
 
+/*
 import akka.actor.ActorContext
 import com.persist.JsonOps._
 import scala.concurrent.{ExecutionContext, Future}
@@ -59,3 +60,4 @@ private[server] case class JsonHandler1(context: ActorContext, handler: Handler,
   }
 
 }
+*/

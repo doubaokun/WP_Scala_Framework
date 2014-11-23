@@ -1,5 +1,6 @@
 package com.whitepages.framework.server
 
+/*
 import akka.actor.ActorContext
 import scala.concurrent.{ExecutionContext, Future}
 import com.twitter.scrooge.Info
@@ -54,3 +55,4 @@ private[server] case class ThriftHandler1(context: ActorContext, handler: Handle
   }
 
 }
+*/

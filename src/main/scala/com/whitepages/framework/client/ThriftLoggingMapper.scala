@@ -1,5 +1,6 @@
 package com.whitepages.framework.client
 
+/*
 import com.persist.JsonOps._
 import com.twitter.scrooge.serialization.ThriftCodec
 import spray.http._
@@ -49,4 +50,5 @@ private[client] case class ThriftLoggingMapper[IN <: ThriftStruct, OUT <: Thrift
     HttpResponse(entity = HttpEntity(Thrift.thriftType, bytes), headers = headers)
   }
 }
+*/
 

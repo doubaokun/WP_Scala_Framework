@@ -1,5 +1,7 @@
 package com.whitepages.framework.client
 
+/*
+
 import scala.concurrent.duration._
 import com.whitepages.TestMain
 import org.scalatest._
@@ -14,7 +16,6 @@ import com.whitepages.framework.client.driverIds.{HealthId, ReqTryId}
 import com.whitepages.framework.client.RedisClient._
 import java.net.{InetAddress, Socket}
 
-/*
 class TestRedisActor extends FunSpec {
 
   object Callback extends ClientCallback with ClassSupport {
