@@ -11,13 +11,14 @@ import scala.concurrent.duration._
 import akka.pattern._
 import scala.language.postfixOps
 import com.whitepages.framework.logging.{noId, LoggingControl}
-import java.net.InetAddress
+import java.net.{NetworkInterface, InetAddress}
 import com.whitepages.framework.monitor.{MonitorDefaults, Monitor}
 import com.whitepages.framework.logging.Logger
 import com.whitepages.framework.server.Server
 import com.whitepages.framework.service.LifecycleMessages.{LcDraining, LcDrained, LcInfo}
 import com.whitepages.framework.monitor.Monitor.{Reset, Drained}
 import java.util.concurrent.TimeUnit
+import scala.collection.JavaConversions._
 
 /**
  * This class is the base class for all services built using
@@ -71,16 +72,56 @@ private[framework] abstract class BaseService extends Daemon {
   private[this] var handler: BaseHandler = null
 
   private def lookupBuildInfo(name: String): JsonObject = {
-    val sn1 = name.replace("-", "_")
-    val fn1 = s"com.whitepages.info.$sn1.BuildInfo"
-    val clazz1 = Class.forName(fn1)
-    val fn = fn1 + "$"
-    val clazz = Class.forName(fn)
-    val mod = clazz.getDeclaredField("MODULE$").get(null)
-    def getVal(n: String) = {
-      clazz1.getMethod(n).invoke(mod)
+    try {
+      val sn1 = name.replace("-", "_")
+      val fn1 = s"com.whitepages.info.$sn1.BuildInfo"
+      val clazz1 = Class.forName(fn1)
+      val fn = fn1 + "$"
+      val clazz = Class.forName(fn)
+      val mod = clazz.getDeclaredField("MODULE$").get(null)
+      def getVal(n: String) = {
+        clazz1.getMethod(n).invoke(mod)
+      }
+      getVal("toMap").asInstanceOf[JsonObject]
+    } catch {
+      case ex: Throwable => emptyJsonObject
     }
-    getVal("toMap").asInstanceOf[JsonObject]
+  }
+
+  private def getIp:String = {
+    try {
+      val net = NetworkInterface.getNetworkInterfaces().toSeq
+      val net1 = net filter {
+        case n =>
+          n.getName.startsWith("en")
+      }
+      val all1 = net1 flatMap {
+        case n => n.getInetAddresses.toSeq
+      }
+      val all2 = all1 filter {
+        case n => n.isSiteLocalAddress
+      }
+      val all3 = all2 map {
+        case item =>
+          val parts = item.toString().split("/")
+          parts(1)
+      }
+      val ip = all3.head
+      ip
+    }  catch {
+      case ex:Throwable => "localhost"
+    }
+  }
+
+  private def getHostIp:(String,String) = {
+    try {
+      val lh = InetAddress.getLocalHost()
+      (lh.getHostName, lh.getHostAddress)
+    } catch {
+      case ex:Throwable =>
+        val ip = getIp
+        (ip,ip)
+    }
   }
 
   private def getBuildInfo: JsonObject = {
@@ -89,6 +130,8 @@ private[framework] abstract class BaseService extends Daemon {
       val frameworkMap = lookupBuildInfo(("scala-webservice"))
       val frameworkVersion = jgetString(frameworkMap, "version")
 
+      val (host,ip) = getHostIp
+      /*
       val ip = InetAddress.getLocalHost.getHostAddress
       val host = try {
         val canonicalHostname = InetAddress.getLocalHost.getCanonicalHostName
@@ -104,6 +147,7 @@ private[framework] abstract class BaseService extends Daemon {
       } catch {
         case ex: Throwable => "localhost"
       }
+      */
       map ++ JsonObject("host" -> host, "ip" -> ip, "frameworkVersion" -> frameworkVersion)
     } catch {
       case ex: Throwable => emptyJsonObject
@@ -201,7 +245,6 @@ private[framework] abstract class BaseService extends Daemon {
     val maxWarmup = getFiniteDuration("wp.service.maxWarmup", config)
     val waitEnableLB = getFiniteDuration("wp.service.waitEnableLB", config)
     if (runServer) {
-      //server = Server(sd = this, infos = getInfo, handler = handler,
       server = Server(sd = this, handler = handler,
         queryStringHandlerIn = queryStringHandler,
         listen = listen, port = port, isDev, useOld, buildInfo)

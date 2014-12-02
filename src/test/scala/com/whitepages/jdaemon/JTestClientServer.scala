@@ -31,6 +31,7 @@ class JTestClientServer extends FunSpec with Matchers with ClassSupport with Bef
       val request = JsonObject(
         "address1" -> "1301 5th ave",
         "address2" -> "1600",
+
         "location" -> "seattle, WA")
       val f = client.postJson("echo", request, noId)
       val response = Await.result(f, 10 seconds)
