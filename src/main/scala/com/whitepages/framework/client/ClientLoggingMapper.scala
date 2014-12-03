@@ -2,7 +2,7 @@ package com.whitepages.framework.client
 
 import com.persist.JsonOps._
 import spray.http.{HttpRequest,HttpResponse}
-import com.whitepages.framework.client.RedisClient.{RedisResponse, RedisRequest}
+//import com.whitepages.framework.client.RedisClient.{RedisResponse, RedisRequest}
 
 //TODO: add jToIn for log replay
 private[whitepages] trait ClientLoggingMapper[In, Out] {
@@ -14,5 +14,5 @@ private[whitepages] trait ClientLoggingMapper[In, Out] {
 
 private[whitepages] trait ClientHttpLoggingMapper extends ClientLoggingMapper[HttpRequest, HttpResponse]
 
-private[whitepages] trait ClientRedisLoggingMapper extends ClientLoggingMapper[RedisRequest, RedisResponse]
+//private[whitepages] trait ClientRedisLoggingMapper extends ClientLoggingMapper[RedisRequest, RedisResponse]
 

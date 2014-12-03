@@ -1,3 +1,4 @@
+ /*
 package com.whitepages.framework.client
 
 import akka.actor.{ActorRefFactory, Props}
@@ -90,3 +91,4 @@ private[client] class RedisBaseClient(actorFactory: ActorRefFactory,
   }
 
 }
+*/

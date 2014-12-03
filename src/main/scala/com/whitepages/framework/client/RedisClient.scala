@@ -1,3 +1,4 @@
+/*
 package com.whitepages.framework.client
 
 import akka.actor.ActorRefFactory
@@ -327,3 +328,4 @@ case class RedisClient(actorFactory: ActorRefFactory,
   }
 
 }
+*/

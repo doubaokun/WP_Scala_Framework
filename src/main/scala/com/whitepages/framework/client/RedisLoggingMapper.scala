@@ -1,3 +1,4 @@
+ /*
 package com.whitepages.framework.client
 
 import com.persist.JsonOps._
@@ -56,3 +57,4 @@ private[client] case class RedisLoggingMapper(clientName: String) extends Client
   }
 
 }
+*/

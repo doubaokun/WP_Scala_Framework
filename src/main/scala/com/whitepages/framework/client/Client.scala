@@ -24,7 +24,7 @@ import com.whitepages.framework.logging.RequestId
 //import com.whitepages.framework.util.Thrift
 import com.whitepages.framework.util
 import spray.http._
-import org.apache.thrift.protocol.TMessage
+//import org.apache.thrift.protocol.TMessage
 
 // TODO get rid of this
 private[client] object HttpClientMockFactories {

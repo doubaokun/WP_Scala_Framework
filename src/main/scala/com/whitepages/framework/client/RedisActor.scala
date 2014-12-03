@@ -1,3 +1,5 @@
+ /*
+
 package com.whitepages.framework.client
 
 import java.util.concurrent.TimeUnit
@@ -320,6 +322,7 @@ private[whitepages] class RedisActor(driverMessages: DriverMessages[RedisRequest
 }
 
 //TODO handle multiple non-string types
+ */
 
 
 
