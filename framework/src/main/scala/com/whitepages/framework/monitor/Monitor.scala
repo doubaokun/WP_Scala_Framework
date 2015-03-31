@@ -45,6 +45,8 @@ object Monitor extends ClassSupport {
 
   private[framework] case object ThriftError extends MonitorMessage
 
+  private[framework] case object ThrottleEvent extends MonitorMessage
+
   private[framework] case class JsonCommand(cmd: String) extends MonitorMessage
 
   private[framework] case class JsonTime(cmd: String, nano: Long, monitor: Option[Any] = None) extends MonitorMessage
@@ -195,6 +197,8 @@ private[framework] class Monitor(ext: (MetricRegistry) => PartialFunction[Any, U
   private[this] var nonJmxReportersStarted = false
   private[this] var drained: Option[Promise[Unit]] = None
 
+  //MonitorGC.addGCMonitor(self)
+
   /*
   Client-scoped
    */
@@ -303,6 +307,7 @@ private[framework] class Monitor(ext: (MetricRegistry) => PartialFunction[Any, U
 
     private[this] var requestMeter: Meter = _
     private[this] var errorMeter: Meter = _
+    private[this] var throttleMeter: Meter = _
     private[this] var requestHistExp: Histogram = _
     private[this] var requestHist: Histogram = _
     //private[this] var cmdHist: Map[String, Histogram] = _
@@ -417,6 +422,9 @@ private[framework] class Monitor(ext: (MetricRegistry) => PartialFunction[Any, U
       errorMeter.mark()
     }
 
+    def incrementThrottleMeter {
+      throttleMeter.mark()
+    }
 
     def resetMetrics {
       // Want to reuse the same registry
@@ -444,6 +452,7 @@ private[framework] class Monitor(ext: (MetricRegistry) => PartialFunction[Any, U
     def registerServerMetrics {
       requestMeter = registry.meter("server.requests")
       errorMeter = registry.meter("server.errors")
+      throttleMeter = registry.meter("server.throttles")
       requestHistExp = registry.register("server.latency-5min.microsecs", new Histogram(new ExponentiallyDecayingReservoir()))
       requestHist = registry.register("server.latency.microsecs", new Histogram(new UniformReservoir()))
       //cmdHist = cmds.map {
@@ -592,6 +601,9 @@ private[framework] class Monitor(ext: (MetricRegistry) => PartialFunction[Any, U
         all.decr
       case ServerError =>
         all.incrementErrorMeter
+      case ThrottleEvent =>
+        all.incrementThrottleMeter
+        all.decr
       case ClientCallStarted(clientName) =>
         if (all.clientMetrics.contains(clientName)) all.clientMetrics(clientName).incr()
       case ClientCallCompleted(clientName) =>

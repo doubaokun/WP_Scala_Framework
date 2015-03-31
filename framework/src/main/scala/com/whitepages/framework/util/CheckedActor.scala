@@ -1,6 +1,6 @@
 package com.whitepages.framework.util
 
-import akka.actor.Actor
+import akka.actor.{ActorLogging, Actor}
 import scala.util.control.Exception
 import com.whitepages.framework.logging.noId
 import com.persist.JsonOps._

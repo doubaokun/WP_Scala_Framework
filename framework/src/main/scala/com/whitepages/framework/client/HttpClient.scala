@@ -1,7 +1,7 @@
 package com.whitepages.framework.client
 
 import akka.actor.{Props, ActorRefFactory}
-import java.net.URLEncoder
+import java.net.{URLDecoder, URLEncoder}
 import scala.concurrent.{ExecutionContext, Future}
 import spray.http._
 import ExecutionContext.Implicits.global
@@ -11,6 +11,7 @@ import spray.http.HttpHeaders.RawHeader
 import com.whitepages.framework.util.{JsonUtil, ClassSupport}
 import com.whitepages.framework.logging.{noId, ReqIdAndSpanOut, AnyId}
 import com.persist.JsonOps._
+import com.whitepages.framework.exceptions.ClientFailException
 import scala.util.{Success, Failure}
 import spray.http.MediaTypes._
 
@@ -86,6 +87,38 @@ object HttpClient extends ClassSupport {
     private[client] val mediaType = MediaTypes.`text/xml`
 
     private[client] def apply(e: HttpEntity) = new XmlBody(e.asString)
+  }
+
+  /**
+   * An application/x-www-form-urlencoded HTTP request or response body
+   */
+  case class W3FormUrlencodedBody(kvs: Map[String, String]) extends Body {
+
+    import W3FormUrlencodedBodyFactory.encoding
+
+    private[client] def encode = {
+      val body = kvs
+        .map { case (k, v) => s"${URLEncoder.encode(k, encoding)}=${URLEncoder.encode(v, encoding)}"}
+        .mkString("&")
+      HttpEntity(W3FormUrlencodedBodyFactory.mediaType, HttpData(body))
+    }
+
+    private[client] def toJson = JsonObject(kvs.toSeq: _*)
+  }
+
+  private[client] object W3FormUrlencodedBodyFactory extends BodyFactory {
+    private [client] val encoding = "UTF-8"
+
+    private[client] val mediaType: MediaType = MediaTypes.`application/x-www-form-urlencoded`
+
+    private[client] def apply(e: HttpEntity): Body = {
+      val kvs = e.asString.split('&')
+      val q = kvs.foldLeft(Seq.empty[(String, String)]){ case (j, pair) =>
+        val kv = pair.split('=')
+        j :+ (URLDecoder.decode(kv(0), encoding) -> (if (kv.size == 2) URLDecoder.decode(kv(1), encoding) else ""))
+      }
+      new W3FormUrlencodedBody(q.toMap)
+    }
   }
 
   /**
@@ -168,40 +201,6 @@ object HttpClient extends ClassSupport {
 
   }
 
-  /*
-  private[client] object ThriftBodyFactory extends BodyFactory {
-    private[client] val mediaType = com.whitepages.framework.util.Thrift.thriftType
-
-    private[client] def apply(e: HttpEntity) = new ThriftBody(e.data.toByteArray)
-
-    private[client] def fromJson(j: Json, clientName: String) {
-      j match {
-        case s: String => {
-          try {
-            ThriftBody(new sun.misc.BASE64Decoder().decodeBuffer(s))
-          } catch {
-            case ex: Throwable => throw ClientFailException(JsonObject("client" -> clientName, "msg" -> "can not decode thrift"))
-          }
-        }
-        case _ => throw ClientFailException(JsonObject("client" -> clientName, "msg" -> "bad thrift body"))
-      }
-    }
-  }
-
-  /**
-   * A Thrift HTTP request or response body
-   * @param body the binary thrift value.
-   */
-  case class ThriftBody(body: Array[Byte]) extends Body {
-
-    import TextBodyFactory.mediaType
-
-    private[client] def encode = HttpEntity(ContentType(mediaType), HttpData(body))
-
-    private[client] def toJson = new sun.misc.BASE64Encoder().encode(body)
-  }
-  */
-
   private[client] object Bodies {
     private def item(fact: BodyFactory) = fact.mediaType.toString() -> fact
 
@@ -211,8 +210,9 @@ object HttpClient extends ClassSupport {
       item(XmlBodyFactory),
       item(SoapBodyFactory),
       item(TextBodyFactory),
-      item(JavascriptBodyFactory)
-      //item(ThriftBodyFactory)
+      item(JavascriptBodyFactory),
+      item(W3FormUrlencodedBodyFactory)
+      //,item(ThriftBodyFactory)
     )
 
     def register(fact: BodyFactory) {
@@ -332,8 +332,13 @@ object HttpClient extends ClassSupport {
    */
   var mocks = Map[String, HttpMock]()
 
-  private[client] def checkStatusCode2XX(status: StatusCode) {
-    if (status.intValue < 200 || status.intValue >= 300) throw new Exception("non-2XX response status code from service")
+  private[client] def checkStatusCode(status: StatusCode) {
+    if (status.intValue >= 200 && status.intValue < 300) {
+    } else if (status.intValue == 404) {
+    } else {
+      throw new ClientFailException(JsonObject("msg"->"bad response status code from service",
+      "code"->status.intValue))
+    }
   }
 
 }
@@ -409,13 +414,13 @@ case class HttpClient(private val actorFactory: ActorRefFactory,
     } else if (oldMock) {
       httpMockClient.call(httpMapper)(httpRequest, allIds, percent, timing, logExtra) map {
         case httpResponse =>
-          HttpClient.checkStatusCode2XX(httpResponse.status)
+          HttpClient.checkStatusCode(httpResponse.status)
           makeResponse(httpResponse, id, httpResponseType)
       }
     } else {
       httpClient.call(httpRequest, allIds.requestId, percent) map {
         case httpResponse =>
-          HttpClient.checkStatusCode2XX(httpResponse.status)
+          HttpClient.checkStatusCode(httpResponse.status)
           makeResponse(httpResponse, id, httpResponseType)
       }
     }

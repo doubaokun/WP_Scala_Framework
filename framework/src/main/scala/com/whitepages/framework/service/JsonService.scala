@@ -2,10 +2,12 @@ package com.whitepages.framework.service
 
 import com.persist.JsonOps._
 import com.whitepages.framework.logging.RequestId
+import com.whitepages.framework.server.JsonAct
 import scala.concurrent.Future
 import akka.actor.ActorRefFactory
 
 object JsonService {
+
   /**
    * A request to a Json service.
    *
@@ -15,7 +17,7 @@ object JsonService {
    * @param dyn dynamic properties.
    * @param method  the HTTP method (GET Or POST).
    */
-  case class Request(cmd: String, request: Json, requestId: RequestId, dyn:JsonObject, method:String)
+  case class Request(cmd: String, request: Json, requestId: RequestId, dyn: JsonObject, method: String)
 
   /**
    * The response from a Json service request.
@@ -42,6 +44,7 @@ object JsonService {
 
   }
 
+
   /**
    * Request handler factories should implement this trait for
    * Json services.
@@ -58,16 +61,22 @@ object JsonService {
 
   }
 
-
 }
 
 /**
  * This abstract class should extended to build the top-level Json service.
  **/
-abstract class JsonService extends BaseService {
-
+abstract class JsonService extends SprayService {
+  import SprayService._
   val handlerFactory: JsonService.HandlerFactory
+  private[this] var jsonAct: JsonAct = null
 
-  private[framework] def getInfo = null
+  private[framework] def createHandler(factory: ActorRefFactory): BaseHandler = {
+    val handler = handlerFactory.start(factory)
+    jsonAct = JsonAct(factory, this, handler)
+    handler
+  }
 
+  private[framework] def sprayAct(in: SprayIn): Future[Option[SprayOut]] =  jsonAct.sprayAct(in)
 }
+

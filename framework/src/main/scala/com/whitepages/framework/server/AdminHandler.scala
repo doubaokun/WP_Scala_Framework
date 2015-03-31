@@ -2,16 +2,14 @@ package com.whitepages.framework.server
 
 import com.persist.JsonOps._
 import scala.concurrent.{ExecutionContext, Future}
-import spray.can.server.Stats
 import spray.can.Http
 import akka.actor.{ActorRef, ActorContext}
 import akka.pattern._
 import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.collection.JavaConversions._
-import com.whitepages.framework.monitor.Monitor
+import scala.collection.JavaConverters._
 import com.whitepages.framework.monitor.Monitor._
-import com.whitepages.framework.exceptions.BadInputException
 import com.whitepages.framework.util.ClassSupport
 import spray.can.server.Stats
 import com.whitepages.framework.exceptions.BadInputException
@@ -89,6 +87,11 @@ private[server] case class AdminHandler(context: ActorContext, dyn: Dynamic, bui
             case prop => prop
           }).toMap
           ("json", j)
+        }
+      case "/admin:getEnv" =>
+        Future {
+          val envs = System.getenv()
+          ("json", envs.asScala)
         }
       case "/admin:toggleTest" =>
         monitor ? ToggleTestMetric map {

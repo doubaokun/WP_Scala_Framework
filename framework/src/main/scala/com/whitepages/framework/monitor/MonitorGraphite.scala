@@ -10,12 +10,13 @@ private[monitor] case class MonitorGraphite(metrics: MetricRegistry)
   extends ReporterWrapper with ClassSupport {
   //val config = system.settings.config
   private[this] val graphiteConfigPath = "wp.monitoring.graphite"
-  private[this] val graphiteHost = config.getString(graphiteConfigPath + ".graphiteHost")
-  private[this] val graphitePort = config.getInt(graphiteConfigPath + ".graphitePort")
-  private[this] val graphiteRateUnit = getTimeUnit(config.getString(graphiteConfigPath + ".rateUnit"))
-  private[this] val graphiteDuration = getTimeUnit(config.getString(graphiteConfigPath + ".duration"))
+  private[this] val graphiteHost       = config.getString(graphiteConfigPath + ".graphiteHost")
+  private[this] val graphitePort       = config.getInt(graphiteConfigPath + ".graphitePort")
+  private[this] val metricsGroupSuffix = config.getString(graphiteConfigPath + ".groupSuffix")
+  private[this] val graphiteRateUnit   = getTimeUnit(config.getString(graphiteConfigPath + ".rateUnit"))
+  private[this] val graphiteDuration   = getTimeUnit(config.getString(graphiteConfigPath + ".duration"))
 
-  val reportUnit = getTimeUnit(config.getString(graphiteConfigPath + ".reportUnit"))
+  val reportUnit     = getTimeUnit(config.getString(graphiteConfigPath + ".reportUnit"))
   val reportInterval = config.getInt(graphiteConfigPath + ".reportInterval")
 
   val reporterOpt: Option[GraphiteReporter] = {
@@ -27,15 +28,19 @@ private[monitor] case class MonitorGraphite(metrics: MetricRegistry)
     // dev.dansab0.asc-svc
 
     if (config.getBoolean(graphiteConfigPath + ".publishToGraphite")) {
-      val graphitePathPrefix = getPathPrefix(serviceName)
+
+      val metricsGroup = Seq(serviceName, metricsGroupSuffix).filter(_.nonEmpty).mkString("_").replaceAll("[.]", "_")
+
+      val graphitePathPrefix = getPathPrefix(metricsGroup)
+
       log.info(noId, s"Publishing metrics to Graphite; host = $graphiteHost:$graphitePort; prefix = $graphitePathPrefix every $reportInterval ${reportUnit}, did you send a monitor reset?")
 
       val reporter = GraphiteReporter.forRegistry(metrics)
-        .prefixedWith(graphitePathPrefix)
-        .convertRatesTo(graphiteRateUnit)
-        .convertDurationsTo(graphiteDuration)
-        .filter(MetricFilter.ALL)
-        .build(new Graphite(new InetSocketAddress(graphiteHost, graphitePort)))
+                     .prefixedWith(graphitePathPrefix)
+                     .convertRatesTo(graphiteRateUnit)
+                     .convertDurationsTo(graphiteDuration)
+                     .filter(MetricFilter.ALL)
+                     .build(new Graphite(new InetSocketAddress(graphiteHost, graphitePort)))
       Some(reporter)
     }
     else {

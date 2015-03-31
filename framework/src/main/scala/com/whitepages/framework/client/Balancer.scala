@@ -10,11 +10,10 @@ import scala.language.postfixOps
 import com.whitepages.framework.monitor.Monitor
 import Monitor._
 import akka.actor.SupervisorStrategy._
-import scala.Some
 import akka.actor.Terminated
 import com.whitepages.framework.exceptions.{NotAvailableException, ClientTimeoutException, ClientFailException}
 import com.whitepages.framework.logging.{noId, AnyId}
-import com.whitepages.framework.util.{ActorSupport, CheckedActor, Util, ClassSupport}
+import com.whitepages.framework.util.{ActorSupport, CheckedActor, ClassSupport}
 import com.persist.JsonOps._
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -70,6 +69,12 @@ private[client] object driverIds {
 private[client] class DriverMessages[In, Out] {
 
   import driverIds._
+
+  // ****************************************************************************************
+  // to driver to itself
+  // ****************************************************************************************
+
+  case object DriverInit
 
   // ****************************************************************************************
   // to driver from balancer
@@ -846,6 +851,8 @@ private[client] case class BalancerActor[In, Out](
       val req = reqTry.req
       actives.add(reqTry, ref)
       connections.send(reqTry, req.in, req.id, ref)
+      if (debug) log.info(noId, JsonObject("client" -> clientName, "BALANCER-MSG" -> req,
+        "sender" -> sender.path.toString))
     }
 
     def sendOrQueue(req: Req) {
@@ -1080,26 +1087,20 @@ private[client] case class Balancer[In, Out](
 
   private[this] implicit val ec: ExecutionContext = actorFactory.dispatcher
 
-  private[this] val (nameSuffix: String, props: Props) =
-    if (dispatcherKey.isEmpty) {
-      log.debug(noId, s"Using default dispatcher for $clientName")
-      ("Balancer",
-        Props(classOf[BalancerActor[In, Out]],
-             driverProps, clientName,
-             messages))
-    }
-    else {
-      log.debug(noId, s"Using dispatcher $dispatcherKey for $clientName")
-      ("BalancerWithDispatcher",
-        Props(classOf[BalancerActor[In, Out]]
-             , driverProps
-             , clientName
-             , messages)
-      .withDispatcher(dispatcherKey)
-        )
-    }
+  private[this] def driverPropsWithDispatcher = (msgs: DriverMessages[In, Out], host: String, port: Int) => {
+    driverProps(msgs, host, port).withDispatcher(dispatcherKey)
+  }
 
-  private[this] val balancerActor = actorFactory.actorOf(props, name = clientName + nameSuffix)
+  private[this] val nameSuffix = "Balancer"
+  private[this] val balancerProps =
+        Props(
+          classOf[BalancerActor[In, Out]],
+          driverPropsWithDispatcher,
+          clientName,
+          messages
+        )
+
+  private[this] val balancerActor = actorFactory.actorOf(balancerProps, name = clientName + nameSuffix)
 
   def call(in: In, id: AnyId, percent: Int): Future[Out] = {
     val percent1 = percent * ServiceState.getPercent / 100
@@ -1124,4 +1125,5 @@ private[client] case class Balancer[In, Out](
   }
 
 }
+
 

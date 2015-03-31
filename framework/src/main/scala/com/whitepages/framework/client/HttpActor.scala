@@ -83,7 +83,7 @@ private[client] class HttpActor(driverMessages: DriverMessages[HttpRequest, Http
       }
       q.dequeue() match {
         case uid: ReqTryId =>
-          if (200 <= status.intValue && status.intValue <= 299) {
+          if ((200 <= status.intValue && status.intValue <= 299) || status.intValue == 404) {
             balancer ! DriverReceive(response, uid)
           } else if (status == StatusCodes.ServiceUnavailable) {
             if (!close) balancer ! DriverReceiveRetry("Not available", uid)

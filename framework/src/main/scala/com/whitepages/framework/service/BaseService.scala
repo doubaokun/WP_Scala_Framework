@@ -1,7 +1,7 @@
 package com.whitepages.framework.service
 
-import java.util.concurrent.TimeUnit
 
+import java.util.concurrent.TimeUnit
 import org.apache.commons.daemon.{DaemonContext, Daemon}
 import akka.actor.{ActorRefFactory, Props, ActorSystem}
 import com.typesafe.config.Config
@@ -14,29 +14,35 @@ import scala.language.postfixOps
 import com.whitepages.framework.logging.{ClassLogging, LoggingSystem, noId}
 import java.net.{NetworkInterface, InetAddress}
 import com.whitepages.framework.monitor.{MonitorDefaults, Monitor}
-import com.whitepages.framework.server.Server
+import com.whitepages.framework.server.BaseServer
 import com.whitepages.framework.service.LifecycleMessages.{LcDraining, LcDrained, LcInfo}
 import com.whitepages.framework.monitor.Monitor.{Reset, Drained}
 import scala.collection.JavaConversions._
 
 /**
  * This class is the base class for all services built using
- * the framework. Currently we support
- * pure Json Services. Others may be added as needed.
+ * the framework. Currently we support pure Json Services. Others may be added as needed.
  * This class should not be referenced directly; instead one of
  * it children should be used.
  *
  * Services are started in production via the jsvc daemon.
  * Services are started in development using the startServer method.
+ * Docker services are started using DockerRunner.
  */
-private[framework] abstract class BaseService extends Daemon  with ClassLogging {
+private[framework] abstract class BaseService extends Daemon with ClassLogging {
 
-  private def getFiniteDuration(path: String, config:Config): FiniteDuration = FiniteDuration(config.getDuration(path, TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
+  private def getFiniteDuration(path: String, config: Config): FiniteDuration = FiniteDuration(config.getDuration(path, TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
 
   private[this] var baseSystem: ActorSystem = null
-  private[this] var server: Server = null
+  private[this] var server: BaseServer = null
   private[this] var baseConfig: Config = null
   private[this] var started = false
+  private[framework] var handler: BaseHandler = null
+
+  private[framework] def createHandler(factory: ActorRefFactory): BaseHandler
+
+
+  //private[service] def getInfo: Map[String, Info]
 
   /**
    * The name of the service will be supplied by the service class.
@@ -62,7 +68,8 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
   val handlerFactory: BaseHandlerFactory
 
   private[this] val className = getClass.getName
-  private[this] var handler: BaseHandler = null
+
+  private[framework] def createService(factory: ActorRefFactory, serviceConfig: Config, isDev: Boolean, buildInfo: JsonObject, ready: Promise[Boolean]): BaseServer
 
   private def lookupBuildInfo(name: String): JsonObject = {
     try {
@@ -81,12 +88,12 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
     }
   }
 
-  private def getIp:String = {
+  private def getIp: String = {
     try {
       val net = NetworkInterface.getNetworkInterfaces().toSeq
       val net1 = net filter {
         case n =>
-          n.getName.startsWith("en")
+          n.getName.startsWith("en") || n.getName.startsWith("eth")
       }
       val all1 = net1 flatMap {
         case n => n.getInetAddresses.toSeq
@@ -101,28 +108,33 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
       }
       val ip = all3.head
       ip
-    }  catch {
-      case ex:Throwable => "localhost"
+    } catch {
+      case ex: Throwable => "localhost"
     }
   }
 
-  private def getHostIp:(String,String) = {
+  private def getHostIp: (String, String) = {
     try {
-      val lh = InetAddress.getLocalHost()
-      (lh.getHostName, lh.getHostAddress)
+      val fip = System.getenv("FRAMEWORK_IP")
+      if (fip != null) {
+        (fip, fip)
+      } else {
+        val lh = InetAddress.getLocalHost()
+        (lh.getHostName, lh.getHostAddress)
+      }
     } catch {
-      case ex:Throwable =>
+      case ex: Throwable =>
         val ip = getIp
-        (ip,ip)
+        (ip, ip)
     }
   }
 
   private def getBuildInfo: JsonObject = {
     try {
       val map = lookupBuildInfo(serviceName)
-      val frameworkMap = lookupBuildInfo(("scala-webservice"))
+      val frameworkMap = lookupBuildInfo(("scala-framework"))
       val frameworkVersion = jgetString(frameworkMap, "version")
-      val (host,ip) = getHostIp
+      val (host, ip) = getHostIp
 
       map ++ JsonObject("host" -> host, "ip" -> ip, "frameworkVersion" -> frameworkVersion)
     } catch {
@@ -132,7 +144,7 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
 
   private[this] var dockerInfo = emptyJsonObject
   private[this] lazy val buildInfo = getBuildInfo ++ dockerInfo
-  private[this] var loggingSystem:LoggingSystem = null
+  private[this] var loggingSystem: LoggingSystem = null
 
   private def startSystem(debugConfig: Option[Config], isDev: Boolean, isTest: Boolean = false,
                           isDocker: Boolean = false, select: Seq[String] = Seq[String]()) {
@@ -180,14 +192,7 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
     import LifecycleMessages._
 
     var ok = true
-    try {
-      handler = handlerFactory.start(baseSystem)
-    } catch {
-      case ex: Throwable =>
-        log.error(noId, "HandlerFactory start failed", ex)
-        ok = false
-
-    }
+    handler = createHandler(baseSystem)
     val listen = baseConfig.getString("wp.service.listen")
     val runServer = baseConfig.getBoolean("wp.service.runServer")
     val runWarmup = baseConfig.getBoolean("wp.service.runWarmup")
@@ -196,10 +201,16 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
     val maxWarmup = getFiniteDuration("wp.service.maxWarmup", baseConfig)
     val waitEnableLB = getFiniteDuration("wp.service.waitEnableLB", baseConfig)
     if (runServer) {
-      server = Server(sd = this, handler = handler,
-        queryStringHandlerIn = queryStringHandler,
-        listen = listen, port = port, isDev, buildInfo)
-      ok = server.start()
+      val ready = Promise[Boolean]()
+      val serviceConfig = baseConfig.getConfig("wp.service")
+      server = createService(baseSystem, serviceConfig, isDev, buildInfo, ready)
+      try {
+        ok = Await.result(ready.future, getFiniteDuration("wp.service.startUpWait", config = baseConfig))
+      } catch {
+        case ex: Throwable =>
+          log.error(noId, JsonObject("msg" -> "service start timed out", "service" -> serviceName))
+          ok = false
+      }
     }
     if (!ok) {
       baseSystem.shutdown()
@@ -208,7 +219,6 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
     }
     if (runApplication) {
       doApplication(baseSystem)
-      //log.info(noId, "Application ready")
     }
     if (runWarmup || lcInfo != None) {
       lcInfo map {
@@ -223,7 +233,6 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
         }
         val warmupFuture = handler.warmup(progress)
         Await.result(warmupFuture, maxWarmup)
-        //log.info(noId, "Finished warmup")
       } catch {
         case ex: Throwable =>
           log.error(noId, "Warmup failed", ex)
@@ -261,7 +270,7 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
           }
           info.lcActor ! LcDraining
           // mark server unavailable
-          if (server != null) server.drain()
+          if (server != null) server.drain
           val p = Promise[Unit]()
           if (ServiceState.monitor0 != null) {
             // wait for q to drain
@@ -294,7 +303,6 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
       Await.result(f1, 2 minutes)
       ServiceState.monitor0 = null
     }
-    //Thread.sleep(50) // Fix testSOLR client log msg after shutdown
     val f = loggingSystem.stop
     Await.result(f, waitStopSystem)
     baseSystem.shutdown()
@@ -311,7 +319,6 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
   private def readCmds() {
     while (true) {
       val line = scala.io.StdIn.readLine
-      //val line = Console.readLine()
       if (line == null) {
         println("command line input not enabled")
         return
@@ -366,8 +373,9 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
    *
    * @param readCommands  an optional boolean. When true it allows sbt to read a stop
    *                      command for stopping the service.
+   * @param isDev an optional boolean. When false turns off dev mode.
    */
-  def runServer(debugConfig: Option[Config] = None, readCommands: Boolean = true) {
+  def runServer(debugConfig: Option[Config] = None, readCommands: Boolean = true, isDev: Boolean = true) {
     startSystem(debugConfig, true)
     startService(true)
     // TODO shutdown when not reading commands??
@@ -394,7 +402,6 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
       clientHandler.act(ClientCallback.Info(baseSystem))
     } catch {
       case ex: Throwable =>
-        //log.error(noId, "Client failed", ex)
         // Must rethrow the exception for ScalaTest!
         throw ex
     } finally {
@@ -419,7 +426,6 @@ private[framework] abstract class BaseService extends Daemon  with ClassLogging 
       clientHandler.act(ClientCallback.Info(baseSystem))
     } catch {
       case ex: Throwable =>
-        //log.error(noId, "Client failed", ex)
         // Must rethrow the exception for ScalaTest!
         throw ex
     } finally {

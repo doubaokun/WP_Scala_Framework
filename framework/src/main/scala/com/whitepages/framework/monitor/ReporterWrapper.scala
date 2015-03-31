@@ -23,7 +23,7 @@ private[monitor] trait ReporterWrapper extends ClassSupport {
   //def configPathFor(serviceName: String, reporterName: String): String =
   //  List("wp", serviceName, "monitoring", reporterName).mkString(".")
 
-  def getPathPrefix(serviceName: String): String = {
+  def getPathPrefix(metricsGroup: String): String = {
     var hostname = "search-unknown.dev"
     import scala.util.control.Exception
 
@@ -43,7 +43,7 @@ private[monitor] trait ReporterWrapper extends ClassSupport {
 
     val p = hostname.replaceFirst("corp", "dev").split("[.]").toSeq.take(2).reverse
     val env = p(0)
-    val group = serviceName
+    val group = metricsGroup // Usually serviceName but sometimes serviceName + an identifying suffix
     // TODO fix region before deploying to other AWS regions
     val region = if (hostname.contains("corp")) "dev"
                  else if (hostname.contains("aws")) "us-west2a"
